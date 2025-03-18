@@ -9,10 +9,13 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@aws-amplify/adapter-nextjs": "^1.5.5",
     "@aws-sdk/client-dynamodb": "^3.758.0",
     "@aws-sdk/util-dynamodb": "^3.758.0",
+    "@radix-ui/react-label": "^2.1.2",
     "@radix-ui/react-slot": "^1.1.2",
     "add": "^2.0.6",
+    "aws-amplify": "^6.13.5",
     "button": "^1.1.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
