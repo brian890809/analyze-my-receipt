@@ -1,7 +1,7 @@
 import DataTable from '@/components/DataTable';
 import {fetchData} from '@/fetch-data';
 import Link from 'next/link';
-import {Button} from '@/components/ui/Button';
+import { Button } from "@/components/ui/button";
 
 const aggredgateData = (data) => {
   const categories = new Map()
