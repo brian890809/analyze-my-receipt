@@ -1,5 +1,7 @@
 import DataTable from '@/components/DataTable';
 import {fetchData} from '@/fetch-data';
+import Link from 'next/link';
+import {Button} from '@/components/ui/Button';
 
 const aggredgateData = (data) => {
   const categories = new Map()
@@ -21,12 +23,18 @@ const aggredgateData = (data) => {
 
 export default async function Home() {
   const data = await fetchData();
-  const categories = aggredgateData(data)
+  const sortedByDate = data.sort((a, b) => new Date(b.date) - new Date(a.date))
+  const categories = aggredgateData(sortedByDate)
   const currencyTotal = categories.get("CurrenciesTotal")
   const categoryTotal = categories.get("CategoriesTotal")
   return (
     <div className="min-h-screen p-8">
       <h1 className="text-2xl font-bold mb-4">Your Current Spending</h1>
+      <div className="mt-8 flex justify-center">
+        <Link href="/add-new-receipt">
+          <Button variant="outline">Add a new Receipt</Button>
+        </Link>
+      </div>
       <div className="flex flex-row justify-around mb-4">
         <div>
           <h2 className="text-xl font-bold">Total Spent by Currency</h2>
@@ -45,7 +53,7 @@ export default async function Home() {
           </ul>
         </div>
       </div>
-      <DataTable data={data} />
+      <DataTable data={sortedByDate} />
     </div>
   );
 }
