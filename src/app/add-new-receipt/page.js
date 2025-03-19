@@ -65,8 +65,6 @@ export default function AddNewReceiptPage() {
             // const response = await addNewReceipt(url);
             const response = await fetch(localApiUrl, { method: type, headers, body });
             const data = await response.json(); 
-            console.log(data)
-            console.log(response)
             if (response.ok) {
                 setSuccess("URL submitted successfully!");
             } else {

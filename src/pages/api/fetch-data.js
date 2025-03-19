@@ -9,7 +9,12 @@ const db = new DynamoDBClient({
   },
 });
 
-export async function fetchData() {
+export default async function handler(req, res) {
+  if (req.method !== 'GET') {
+    res.setHeader('Allow', ['GET']);
+    res.status(405).end(`Method ${req.method} Not Allowed`);
+  }
+
   const params = {
     TableName: 'receipt-entries', // Replace with your DynamoDB table name
   };
@@ -29,9 +34,10 @@ export async function fetchData() {
         grandTotal: unmarshalledItem.total + unmarshalledItem.tax + unmarshalledItem.tip
       }
     })
-    return cleaned; // Return the items from the DynamoDB table
+    res.status(200).json(cleaned);
   } catch (error) {
     console.error('Error fetching data from DynamoDB:', error);
-    throw new Error('Could not fetch data');
+    const errorMessage = error.message || 'Error fetching data from DynamoDB';
+    res.status(500).json({ error: errorMessage });
   }
 }

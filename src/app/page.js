@@ -1,5 +1,9 @@
+"use client";
+import { useAuth } from '@/context/AuthContext';
+import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+
 import DataTable from '@/components/DataTable';
-import {fetchData} from '@/fetch-data';
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 
@@ -21,8 +25,26 @@ const aggredgateData = (data) => {
   return categories
 }
 
-export default async function Home() {
-  const data = await fetchData();
+export default function Home() {
+  const { user, loading, logout } = useAuth();
+  const [data, setData] = useState([]);
+  const router = useRouter();
+  if (!user) {
+    router.push("/login");
+  }
+  
+  useEffect(() => {
+    fetch('/api/fetch-data')
+      .then((response) => response.json())
+      .then((data) => {
+        setData(data);
+      });
+  }, [user])
+  console.log("loading", loading)
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
   const sortedByDate = data.sort((a, b) => new Date(b.date) - new Date(a.date))
   const categories = aggredgateData(sortedByDate)
   const currencyTotal = categories.get("CurrenciesTotal")

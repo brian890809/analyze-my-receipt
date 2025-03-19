@@ -3,7 +3,7 @@ const handler = async (req, res) => {
         res.setHeader("Allow", ["POST"]);
         res.status(405).end(`Method ${req.method} Not Allowed`);
     }    
-    const invokationURL = 'https://ujm0t6frz4.execute-api.us-east-1.amazonaws.com/demo/upload-url'
+    const invokationURL = process.env.INVOKATION_URL
     const type = "POST"
     const headers = { "Content-Type": "application/json" }
     const url = req.body.url

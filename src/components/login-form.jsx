@@ -1,5 +1,3 @@
-"use client";
-
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -12,24 +10,14 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-import { useFormStatus } from "react-dom";
-import { useActionState } from "react";
-import { handleSignIn } from "@/lib/cognitoActions";
-
-function LoginButton({children}) {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" className="w-full" aria-disabled={pending}>
-        {children}
-    </Button>
-  );
-}
-
 export function LoginForm({
   className,
+  formData, 
+  onInputChange, 
+  onSubmit,
+  states,
   ...props
 }) {
-  const [errorMessage, dispatch] = useActionState(handleSignIn, undefined);
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
@@ -40,11 +28,11 @@ export function LoginForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={dispatch}>
+          <form onSubmit={onSubmit}>
             <div className="flex flex-col gap-6">
               <div className="grid gap-3">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="m@example.com" required />
+                <Input id="email" name="email" type="email" placeholder="m@example.com" onChange={onInputChange} value={formData.email} required />
               </div>
               <div className="grid gap-3">
                 <div className="flex items-center">
@@ -55,12 +43,12 @@ export function LoginForm({
                     Forgot your password?
                   </a>
                 </div>
-                <Input id="password" type="password" required />
+                <Input type="password" name="password" id="password" onChange={onInputChange} value={formData.password} required />
               </div>
               <div className="flex flex-col gap-3">
-                <LoginButton>
-                  Login
-                </LoginButton>
+                <Button type="submit" className="w-full">
+                    Login
+                </Button>
               </div>
             </div>
             <div className="mt-4 text-center text-sm">
