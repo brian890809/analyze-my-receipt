@@ -29,21 +29,14 @@ export default function Home() {
   const { user, loading, logout } = useAuth();
   const [data, setData] = useState([]);
   const router = useRouter();
-  if (!user) {
-    router.push("/login");
-  }
-  
+  console.log(user, loading)
   useEffect(() => {
     fetch('/api/fetch-data')
       .then((response) => response.json())
       .then((data) => {
         setData(data);
       });
-  }, [user])
-  console.log("loading", loading)
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+  }, [])
 
   const sortedByDate = data.sort((a, b) => new Date(b.date) - new Date(a.date))
   const categories = aggredgateData(sortedByDate)

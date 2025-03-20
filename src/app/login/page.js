@@ -3,10 +3,8 @@
 import {useState} from 'react'
 import { useRouter } from 'next/navigation';
 import { LoginForm } from "@/components/login-form"
-import { useAuth } from '@/context/AuthContext';
 
 export default function Page() {
-  const {login} = useAuth();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({}); // <{ [key: string]: string }>
   const router = useRouter();
@@ -29,31 +27,19 @@ export default function Page() {
 
     if (Object.keys(validationErrors).length === 0) {
       try {
-        const response = await login(formData.email, formData.password);
-        console.log(response)
-
-        // const response = await fetch('/api/login', {
-        //   method: 'POST',
-        //   headers: {
-        //     'Content-Type': 'application/json',
-        //   },
-        //   body: JSON.stringify(formData),
-        // });
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData),
+        });
 
         if (!response.ok) {
           const data = await response.json();
           setErrors(data.errors);
         } else {
-          // Wait for AuthContext to detect the updated user state
-          const checkAuthState = () => {
-            const interval = setInterval(() => {
-              if (auth.currentUser) {
-                clearInterval(interval);
-                router.push('/');
-              }
-            }, 100); // Check every 100ms56t
-          };
-          checkAuthState();
+          router.push('/');
         }
       } catch (error) {
         console.error('Error submitting form:', error);
