@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-import { handleConfirmSignUp } from "@/lib/cognitoActions";
+// import { handleConfirmSignUp } from "@/lib/cognitoActions";
 import { useFormStatus } from "react-dom";
 import { useActionState } from "react";
 
@@ -30,7 +30,7 @@ export function ConfirmPage({
   className,
   ...props
 }) {
-  const [errorMessage, dispatch] = useActionState(handleConfirmSignUp, undefined);
+  // const [errorMessage, dispatch] = useActionState(handleConfirmSignUp, undefined);
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
@@ -38,7 +38,7 @@ export function ConfirmPage({
           <CardTitle>Please confirm your email</CardTitle>
         </CardHeader>
         <CardContent>
-          <form action={dispatch}>
+          <form action={() => {}}>
             <div className="flex flex-col gap-6">
               <div className="grid gap-3">
                 <Label htmlFor="email">Email</Label>
