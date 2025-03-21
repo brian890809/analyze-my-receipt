@@ -47,9 +47,10 @@ import {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const idToken = await userCredential.user.getIdToken();
+      const uid = auth.currentUser.uid
       if (idToken) {
         res.setHeader('Set-Cookie', `access_token=${idToken}; HttpOnly; Path=/; Max-Age=3600`);
-        res.status(200).json({ success: true, message: "Login successful" });
+        res.status(200).json({ success: true, message: "Login successful", idToken, uid });
       } else {
         res.status(500).json({ success: false, error: "Cannot find ID token" });
       }

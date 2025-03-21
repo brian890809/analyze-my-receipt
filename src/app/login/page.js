@@ -3,11 +3,13 @@
 import {useState} from 'react'
 import { useRouter } from 'next/navigation';
 import { LoginForm } from "@/components/login-form"
+import { useAuth } from '@/context/AuthContext';
 
 export default function Page() {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({}); // <{ [key: string]: string }>
   const router = useRouter();
+  const { login } = useAuth();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -27,20 +29,8 @@ export default function Page() {
 
     if (Object.keys(validationErrors).length === 0) {
       try {
-        const response = await fetch('/api/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(formData),
-        });
-
-        if (!response.ok) {
-          const data = await response.json();
-          setErrors(data.errors);
-        } else {
-          router.push('/');
-        }
+        await login(formData.email, formData.password);
+        router.push('/');
       } catch (error) {
         console.error('Error submitting form:', error);
       }

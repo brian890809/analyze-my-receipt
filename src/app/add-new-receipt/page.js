@@ -1,6 +1,8 @@
 /* eslint-disable react/no-unescaped-entities */
 "use client";
-import { useState } from "react";
+import { useAuth } from '@/context/AuthContext';
+import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -12,7 +14,6 @@ import {
     BreadcrumbPage,
     BreadcrumbSeparator,
   } from "@/components/ui/breadcrumb"
-import addNewReceipt from "@/pages/api/add-new-receipt";
 
 const NewReceiptBreadcrumb = () => (
     <Breadcrumb>
@@ -33,6 +34,14 @@ export default function AddNewReceiptPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
+    const { user, loading:AuthLoading } = useAuth();
+    const router = useRouter();
+
+    useEffect(() => {
+    if (!AuthLoading && !user) {
+        router.push("/login"); // Redirect to login if not authenticated
+    }
+    }, [user, AuthLoading, router]);
 
     const validateUrl = (inputUrl) => {
         try {
@@ -62,16 +71,15 @@ export default function AddNewReceiptPage() {
         
         setLoading(true);
         try {
-            // const response = await addNewReceipt(url);
             const response = await fetch(localApiUrl, { method: type, headers, body });
             const data = await response.json(); 
             if (response.ok) {
                 setSuccess("URL submitted successfully!");
             } else {
-                setError("Failed to submit the URL. Please try again.");
+                setError("Failed to submit the URL:", data.errors);
             }
         } catch (err) {
-            setError("An error occurred. Please try again.");
+            setError("An error occurred:", err);
         } finally {
             setLoading(false);
         }
