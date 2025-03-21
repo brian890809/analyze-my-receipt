@@ -1,4 +1,4 @@
-import { DynamoDBClient, ScanCommand } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient, ScanCommand, QueryCommand } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
 
 const db = new DynamoDBClient({
@@ -16,7 +16,8 @@ export default async function handler(req, res) {
   }
 
   const params = {
-    TableName: 'receipt-entries', // Replace with your DynamoDB table name
+    TableName: 'receipt-entries', // TODO: Replace with a new table with userId as the partition key
+    // 
   };
 
   try {

@@ -61,13 +61,24 @@ export default function AddNewReceiptPage() {
             setError("Please enter a valid URL.");
             return;
         }
+        if (!user.uid) {
+            setError("Please log in to submit a receipt.");
+            return;
+        }
         
         const localApiUrl = '/api/add-new-receipt'
         const type = "POST"
         const headers = {
             "Content-Type": "application/json",
         }
-        const body = JSON.stringify({ url })
+        console.log({ 
+            url,
+            userId: user.uid
+        })
+        const body = JSON.stringify({ 
+            url,
+            userId: user.uid
+        })
         
         setLoading(true);
         try {
