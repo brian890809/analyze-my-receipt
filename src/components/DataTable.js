@@ -3,6 +3,7 @@
 import React from "react"
 
 import { useState } from "react"
+import { Edit } from "lucide-react"
 import {
   Table,
   TableBody,
@@ -13,15 +14,35 @@ import {
 } from "@/components/ui/table"
 import { ChevronDown, ChevronUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import EditEntry from "./edit-entry"
 
 const roundNum = num => Math.round((num + Number.EPSILON) * 100) / 100
 
 const DataTable = ({ data }) => {
   const [expandedRows, setExpandedRows] = useState([])
+  const [openIndex, setOpenIndex] = useState(null)
+  const [entry, setEntry] = useState(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const toggleRow = (id) => {
     setExpandedRows((prev) => (prev.includes(id) ? prev.filter((rowId) => rowId !== id) : [...prev, id]))
   }
   const isRowExpanded = (id) => expandedRows.includes(id)
+  const handleEdit = (entry, index) => {
+    setEntry(entry)
+    setOpenIndex(index)
+    setIsModalOpen(true)
+  }
+  const handleUpdate = async (updates) => {
+    // Update data
+    setIsModalOpen(false)
+    setEntry(null)
+    const { frontend, backend } = updates
+    data[openIndex] = frontend
+    await fetch('/api/edit-receipt', {
+      method: 'PUT',
+      body: JSON.stringify(backend)
+    })
+  }
   return (
     <div className="overflow-x-auto">
       <Table className="min-w-full divide-y divide-gray-200">
@@ -33,11 +54,12 @@ const DataTable = ({ data }) => {
             <TableHead className="">Category</TableHead>
             <TableHead className="">Place</TableHead>
             <TableHead className="">Grand Total</TableHead>
-            <TableHead className="">SubTotal</TableHead>
+            <TableHead className="">Subtotal</TableHead>
             <TableHead className="">Tax</TableHead>
             <TableHead className="">Tip</TableHead>
             <TableHead className="">Currency</TableHead>
             <TableHead className="">Source</TableHead>
+            <TableHead className="sticky right-0 bg-gray-50">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody className="">
@@ -62,6 +84,11 @@ const DataTable = ({ data }) => {
                 <TableCell className="">{
                   (entry.source) ? <a target="_blank" href={entry.source}>{entry.source}</a> : ""
                 }</TableCell>
+                <TableCell className="sticky right-0 bg-white dark:bg-gray-950 w-[100px]">
+                  <Button variant="ghost" size="icon" onClick={() => handleEdit(entry, index)}>
+                    <Edit />
+                  </Button>
+                </TableCell>
               </TableRow>
               {isRowExpanded(index) && (
                 <>
@@ -90,6 +117,15 @@ const DataTable = ({ data }) => {
           )})}
         </TableBody>
       </Table>
+
+      {isModalOpen && (
+        <EditEntry
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          entry={entry}
+          onUpdate={handleUpdate}
+        />
+      )}
     </div>
   );
 };
