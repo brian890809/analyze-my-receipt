@@ -1,5 +1,5 @@
 import { DynamoDBClient, UpdateItemCommand, QueryCommand } from "@aws-sdk/client-dynamodb";
-import { unmarshall } from "@aws-sdk/util-dynamodb";
+import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
 
 const db = new DynamoDBClient({
   region: process.env.AWS_REGION, // Use region from env
@@ -39,6 +39,7 @@ const handler = async (req, res) => {
     const data = unmarshall(JSON.parse(req.body))
     const { uuid, ...updates } = data
     delete updates["merchant#time"];
+    const marshalled = marshall(updates)
     const existingItem = unmarshall(await getItemByUUID(uuid));
     if (!existingItem) {
         res.status(404).json({ error: `Item with UUID ${uuid} not found` });
@@ -50,19 +51,13 @@ const handler = async (req, res) => {
     const expressionAttributeValues = {};
     const expressionAttributeNames = {};
     let index = 0;
-    for (let [key, value] of Object.entries(updates)) {
+    for (let [key, value] of Object.entries(marshalled)) {
         const attrName = `#attr${index}`;
         const attrValue = `:val${index}`;
         updateExpressions.push(`${attrName} = ${attrValue}`);
 
         expressionAttributeNames[attrName] = key;
-        expressionAttributeValues[attrValue] =
-        typeof value === "number" ? { N: String(value) } :
-        typeof value === "string" ? { S: value } :
-        Array.isArray(value)
-            ? { L: value.map((item) => ({ S: item })) }
-            : { M: value };
-
+        expressionAttributeValues[attrValue] = value
         index++;
     }
 
@@ -86,8 +81,8 @@ const handler = async (req, res) => {
         const result = await db.send(command); // Send the command to the database
         res.status(200).json("Item updated successfully", result);
       } catch (error) {
-        console.error('Error fetching data from DynamoDB:', error);
-        const errorMessage = error.message || 'Error fetching data from DynamoDB';
+        console.error('Error updating DynamoDB:', error);
+        const errorMessage = error.message || 'Error updating DynamoDB';
         res.status(500).json({ error: errorMessage });
       }
 }

@@ -33,15 +33,15 @@ const DataTable = ({ data }) => {
     setIsModalOpen(true)
   }
   const handleUpdate = async (updates) => {
-    // Update data
-    setIsModalOpen(false)
-    setEntry(null)
     const { frontend, backend } = updates
     data[openIndex] = frontend
     await fetch('/api/edit-receipt', {
       method: 'PUT',
       body: JSON.stringify(backend)
     })
+    // Update data
+    setIsModalOpen(false)
+    setEntry(null)
   }
   return (
     <div className="overflow-x-auto">
