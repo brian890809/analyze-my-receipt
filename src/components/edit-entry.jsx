@@ -43,8 +43,8 @@ export default function EditEntry({ isOpen, onClose, entry, onUpdate }) {
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose} className="max-h-[90vh]">
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={isOpen} onOpenChange={onClose} className="">
+      <DialogContent className="sm:max-w-[425px] overflow-y-scroll max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Edit Entry</DialogTitle>
         </DialogHeader>
