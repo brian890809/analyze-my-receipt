@@ -16,7 +16,7 @@ export default async function handler(req, res) {
   }
 
   const params = {
-    TableName: 'receipt-entries', // Replace with your DynamoDB table name
+    TableName: 'receipt-entries', // TODO: replace with a new table
   };
 
   try {
