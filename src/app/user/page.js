@@ -1,10 +1,10 @@
-"use client";
+'use client'
 
-import { useEffect, useState } from "react";
 import { useAuth } from '@/context/AuthContext';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -14,7 +14,6 @@ import {
     BreadcrumbSeparator,
   } from "@/components/ui/breadcrumb"
 import { X } from "lucide-react"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 
 const UserBreadcrumb = () => (
     <Breadcrumb>
@@ -31,14 +30,46 @@ const UserBreadcrumb = () => (
 )
 
 export default function UserSettingsPage() {
-    const { user } = useAuth();
-    // const userId = user.userId
+    const { user, loading: AuthLoading } = useAuth();
+    const [userId, setUserId] = useState(null)
     const [emails, setEmails] = useState([]) // for existing
     const [newEmails, setNewEmails] = useState([""]) // for new
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
+    const router = useRouter()
 
+    useEffect(() => {
+        if (!user && !AuthLoading) {
+            router.push("/login"); // Redirect to login if not authenticated
+        }
+        if (user) {
+            setUserId(user.uid)
+        }
+    }, [user, AuthLoading, router]);
+    
+    useEffect(() => {
+        if (!userId) {
+            return
+        }
+        // get list of emails from backend
+        const type = "POST"
+        const headers = {
+            "Content-Type": "application/json",
+        }
+        const body = JSON.stringify({ 
+            userId: userId
+        })
+        fetch('/api/get-user-emails', { method: type, headers, body })
+        .then((res) => res.json())
+        .then((data) => {
+            if (data.emails && data.emails.length > 0) {
+                setEmails(data)
+            } else {
+                setEmails([])
+            }
+        })
+    }, [userId])
     const handleInputChange = (value, index) => {
         const list = [...newEmails]
         list[index] = value
@@ -63,26 +94,23 @@ export default function UserSettingsPage() {
         // submit emails here along with userId
         console.log(newEmails)
     }
-    useEffect(() => {
-        // get list of emails from backend
-        const userEmails = ['abc@def.com', 'xyz@wuv.com']
-        setEmails(userEmails)
-    }, [])
-
+    
     return (
         <div className="min-h-screen p-6 max-w-2xl m-auto">
             <UserBreadcrumb />
             <div className="mt-10 flex items-center justify-center">
                 <div className="">
                     <h1 className="text-2xl font-bold mb-4">User Emails</h1>
-                    {emails.map((email, i) => (
-                        <div
-                            key={i}
-                            className="flex items-center justify-between p-2"
-                        >
-                            <span className="text-sm text-gray-700">{email}</span>
-                        </div>
-                    ))}
+                    {emails.length === 0 ? (<span className="text-sm text-gray-700">No Emails Associated Yet</span>) : (
+                        emails.map((email, i) => (
+                            <div
+                                key={i}
+                                className="flex items-center justify-between p-2"
+                            >
+                                <span className="text-sm text-gray-700">{email}</span>
+                            </div>
+                        ))
+                    )}
                     <h1 className="text-2xl font-bold my-4">Additional Emails</h1>
                     <form onSubmit={handleSubmit}>
                         <label htmlFor="urlInput" className="block text-sm font-medium mb-3">

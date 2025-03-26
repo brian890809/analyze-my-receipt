@@ -24,6 +24,9 @@ export default function Navbar() {
         <Link href="/add-new-receipt">
           <Button variant="outline">Add a new Receipt</Button>
         </Link>
+        <Link href="/user">
+          <Button variant="outline">User Settings</Button>
+        </Link>
         <Button variant="destructive" onClick={handleLogout}>
           Log Out
         </Button>

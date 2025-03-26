@@ -71,10 +71,6 @@ export default function AddNewReceiptPage() {
         const headers = {
             "Content-Type": "application/json",
         }
-        console.log({ 
-            url,
-            userId: user.uid
-        })
         const body = JSON.stringify({ 
             url,
             userId: user.uid

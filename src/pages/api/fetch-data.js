@@ -2,7 +2,7 @@ import { DynamoDBClient, ScanCommand, QueryCommand } from "@aws-sdk/client-dynam
 import { unmarshall } from "@aws-sdk/util-dynamodb";
 
 const db = new DynamoDBClient({
-  region: process.env.AWS_REGION, // Use region from env
+  region: process.env.AWS_REGION,
   credentials: {
       accessKeyId: process.env.AWS_ACCESS_KEY_ID,
       secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
@@ -17,7 +17,7 @@ export default async function handler(req, res) {
 
   const params = {
     TableName: 'receipt-entries', // TODO: Replace with a new table with userId as the partition key
-    // 
+    // add userId
   };
 
   try {
