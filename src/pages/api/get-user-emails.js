@@ -38,8 +38,9 @@ export default async function handler(req, res) {
         res.status(200).json({ message: "No email associated with User ID:", uid})
         return
     }
+    const unmarshalled = emails.map(email => unmarshall(email))
     res.status(200).json({
         message: "Emails found",
-        emails
+        emails: unmarshalled
     })
 }

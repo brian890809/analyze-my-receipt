@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -14,6 +15,7 @@ import {
     BreadcrumbSeparator,
   } from "@/components/ui/breadcrumb"
 import { X } from "lucide-react"
+import { validateEmail } from '@/util/validate';
 
 const UserBreadcrumb = () => (
     <Breadcrumb>
@@ -58,13 +60,13 @@ export default function UserSettingsPage() {
             "Content-Type": "application/json",
         }
         const body = JSON.stringify({ 
-            userId: userId
+            userId
         })
         fetch('/api/get-user-emails', { method: type, headers, body })
         .then((res) => res.json())
         .then((data) => {
             if (data.emails && data.emails.length > 0) {
-                setEmails(data)
+                setEmails(data.emails)
             } else {
                 setEmails([])
             }
@@ -89,12 +91,32 @@ export default function UserSettingsPage() {
         }
     }
     
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault()
+        const allValid = newEmails.every(email => validateEmail(email) === true)
+        if (!allValid) {
+            console.log("Some inputs are not valid emails, please try again")
+            return
+        }
         // submit emails here along with userId
-        console.log(newEmails)
+        const type = "POST"
+        const headers = {
+            "Content-Type": "application/json",
+        }
+        const body = JSON.stringify({ 
+            userId,
+            emails: newEmails
+        })
+        const res = await fetch('/api/new-user-emails', { method: type, headers, body })
+        const data = await res.json()
+        if (res.ok) {
+            setSuccess("Emails added successfully")
+            router.refresh()
+        } else {
+            setError(data.error)
+        }
+
     }
-    
     return (
         <div className="min-h-screen p-6 max-w-2xl m-auto">
             <UserBreadcrumb />
@@ -107,7 +129,7 @@ export default function UserSettingsPage() {
                                 key={i}
                                 className="flex items-center justify-between p-2"
                             >
-                                <span className="text-sm text-gray-700">{email}</span>
+                                <span className="text-sm text-gray-700">{email.emailOrUid.slice(6)}</span>
                             </div>
                         ))
                     )}
@@ -147,6 +169,18 @@ export default function UserSettingsPage() {
                             </Button>
                         </div>
                     </form>
+                    {error && (
+                        <Alert variant="destructive" className="mt-4">
+                            <AlertTitle>Error</AlertTitle>
+                            <AlertDescription>{error}</AlertDescription>
+                        </Alert>
+                    )}
+                    {success && (
+                        <Alert variant="success" className="mt-4">
+                            <AlertTitle>Success</AlertTitle>
+                            <AlertDescription>{success}</AlertDescription>
+                        </Alert>
+                    )}
                 </div>
             </div> 
         </div>

@@ -14,6 +14,7 @@ import {
     BreadcrumbPage,
     BreadcrumbSeparator,
   } from "@/components/ui/breadcrumb"
+import { validateURL } from '@/util/validate';
 
 const NewReceiptBreadcrumb = () => (
     <Breadcrumb>
@@ -43,21 +44,13 @@ export default function AddNewReceiptPage() {
     }
     }, [user, AuthLoading, router]);
 
-    const validateUrl = (inputUrl) => {
-        try {
-            new URL(inputUrl);
-            return true;
-        } catch (_) {
-            return false;
-        }
-    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError("");
         setSuccess("");
 
-        if (!validateUrl(url)) {
+        if (!validateURL(url)) {
             setError("Please enter a valid URL.");
             return;
         }
