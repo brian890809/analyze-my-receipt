@@ -26,21 +26,35 @@ const aggredgateData = (data) => {
 
 export default function Home() {
   const { user, loading } = useAuth();
+  const [userId, setUserId] = useState(null)
   const [data, setData] = useState([]);
   const router = useRouter();
   useEffect(() => {
     if (!loading && !user) {
       router.push("/login"); // Redirect to login if not authenticated
     }
+    if (user) {
+      setUserId(user.uid)
+    }
   }, [user, loading, router]);
 
   useEffect(() => {
-    fetch('/api/fetch-data')
+    if (!userId) {
+      return
+    }
+    const type = "POST"
+    const headers = {
+        "Content-Type": "application/json",
+    }
+    const body = JSON.stringify({ 
+        userId,
+    })
+    fetch('/api/fetch-data', { method: type, headers, body })
       .then((response) => response.json())
       .then((data) => {
         setData(data);
       });
-  }, [])
+  }, [userId])
 
   if (loading) {
     return (<p>Loading...</p>);

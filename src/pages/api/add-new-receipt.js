@@ -7,7 +7,8 @@ const handler = async (req, res) => {
     const type = "POST"
     const headers = { "Content-Type": "application/json" }
     const url = req.body.url
-    const body = JSON.stringify({ fileUrl: url })
+    const userId = req.body.userId
+    const body = JSON.stringify({ fileUrl: url, userId })
     try {
         const response = await fetch(invokationURL, { method: type, headers, body })
         const data = await response.json()
