@@ -1,4 +1,4 @@
-import { DynamoDBClient, ScanCommand, QueryCommand } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient, QueryCommand } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
 
 const db = new DynamoDBClient({
@@ -10,18 +10,22 @@ const db = new DynamoDBClient({
 });
 
 export default async function handler(req, res) {
-  if (req.method !== 'GET') {
-    res.setHeader('Allow', ['GET']);
+  if (req.method !== 'POST') {
+    res.setHeader('Allow', ['POST']);
     res.status(405).end(`Method ${req.method} Not Allowed`);
   }
-
+  const userId = req.body.userId
   const params = {
     TableName: 'receipt-entries', // TODO: Replace with a new table with userId as the partition key
-    // add userId
+    IndexName: 'userId-index',
+    KeyConditionExpression: "userId = :userIdValue",
+    ExpressionAttributeValues: {
+      ":userIdValue": { S: userId }, // Assuming userId is a string
+    },
   };
 
   try {
-    const command = new ScanCommand(params);
+    const command = new QueryCommand(params);
     const {Items} = await db.send(command); // Send the command to the database
     const cleaned = Items.map((item) => {
       const unmarshalledItem = unmarshall(item)
