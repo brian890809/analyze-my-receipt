@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import DataTable from '@/components/DataTable/DataTable';
 import Navbar from '@/components/Navbar';
 import { getStandardCurrencyCode } from '@/util/currency-code';
+import { parse, format } from "date-fns";
 
 const aggredgateData = (data) => {
   const categories = new Map()
@@ -51,12 +52,12 @@ export default function Home() {
     })
     fetch('/api/fetch-data', { method: type, headers, body })
       .then((response) => response.json())
-      .then((data) => {
-        const unifiedCurrency = data.map(entry => ({
+      .then((data) => { 
+        setData(data.map(entry => ({
           ...entry,
-          currency: getStandardCurrencyCode(entry.currency)
-        }))
-        setData(unifiedCurrency);
+          currency: getStandardCurrencyCode(entry.currency),
+          date: parse(entry.date, "yyyy-MM-dd", new Date())
+        })));
       });
   }, [userId])
 
@@ -72,6 +73,7 @@ export default function Home() {
   const categories = aggredgateData(sortedByDate)
   const currencyTotal = categories.get("CurrenciesTotal")
   const categoryTotal = categories.get("CategoriesTotal")
+
   return (
     <>
       <Navbar />

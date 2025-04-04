@@ -1,51 +1,17 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { format } from "date-fns"
-import { CalendarIcon } from "lucide-react"
-import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Calendar } from "@/components/ui/calendar"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
+import DatePicker from "@/components/date-picker"
 import { marshall } from "@aws-sdk/util-dynamodb";
-
-const DatePicker = ({ date, setDate }) => {
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          variant={"outline"}
-          className={cn(
-            "w-[280px] justify-start text-left font-normal",
-            !date && "text-muted-foreground"
-          )}
-        >
-          <CalendarIcon className="mr-2 h-4 w-4" />
-          {date ? format(date, "PPP") : <span>Pick a date</span>}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-0">
-        <Calendar
-          mode="single"
-          selected={date}
-          onSelect={setDate}
-          initialFocus
-        />
-      </PopoverContent>
-    </Popover>
-  )
-}
 
 export default function EditEntry({ isOpen, onClose, entry, onUpdate }) {
   const [formData, setFormData] = useState(entry)
+  const [dateModalOpen, setDateModalOpen] = useState(false)
   const [updatedItems, setUpdatedItems] = useState({uuid: entry.uuid, merchant: entry.merchant, time: entry.time})
   // Update form data when user changes
   useEffect(() => {
@@ -61,6 +27,12 @@ export default function EditEntry({ isOpen, onClose, entry, onUpdate }) {
       setUpdatedItems((prev) => ({ ...prev, [name]: value }))
       setFormData((prev) => ({ ...prev, [name]: value }))
     }
+  }
+
+  const handleDateChange = (date) => {
+    setUpdatedItems((prev) => ({ ...prev, date: date }))
+    setFormData((prev) => ({ ...prev, date: date }))
+    setDateModalOpen(false)
   }
 
   const handleSubmit = (e) => {
@@ -89,7 +61,14 @@ export default function EditEntry({ isOpen, onClose, entry, onUpdate }) {
               <Label htmlFor="date" className="text-right">
                 Date
               </Label>
-              <DatePicker id="date" name="date" date={formData.date} setDate={handleChange} />
+              <DatePicker 
+                modal={true} 
+                id="date" 
+                name="date" 
+                date={formData.date} 
+                setDate={handleDateChange} 
+                open={dateModalOpen} 
+                onOpenChange={setDateModalOpen} />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="time" className="text-right">
