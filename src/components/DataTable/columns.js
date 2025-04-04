@@ -2,6 +2,7 @@
 
 import { Edit, ArrowUpDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { format, parse } from "date-fns";
 
 const roundNum = num => Math.round((num + Number.EPSILON) * 100) / 100
 
@@ -32,12 +33,8 @@ export const columns = [
         accessorKey: "time",
         cell: ({ row }) => {
             const time = row.original.time
-            const [hours, minutes, seconds] = time.split(":").map(Number);
-            const formatted = new Date(0, 0, 0, hours, minutes, seconds).toLocaleTimeString("en-US", {
-                hour: "numeric",
-                minute: "numeric", 
-                hour12: true 
-            })
+            const date = parse(time, "HH:mm:ss", new Date());
+            const formatted = format(date, "h:mm a");
             return <div className="text-center font-medium">{formatted}</div>
         }
     },
