@@ -1,13 +1,48 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { format } from "date-fns"
+import { CalendarIcon } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Calendar } from "@/components/ui/calendar"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
 import { marshall } from "@aws-sdk/util-dynamodb";
 
+const DatePicker = ({ date, setDate }) => {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          variant={"outline"}
+          className={cn(
+            "w-[280px] justify-start text-left font-normal",
+            !date && "text-muted-foreground"
+          )}
+        >
+          <CalendarIcon className="mr-2 h-4 w-4" />
+          {date ? format(date, "PPP") : <span>Pick a date</span>}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0">
+        <Calendar
+          mode="single"
+          selected={date}
+          onSelect={setDate}
+          initialFocus
+        />
+      </PopoverContent>
+    </Popover>
+  )
+}
 
 export default function EditEntry({ isOpen, onClose, entry, onUpdate }) {
   const [formData, setFormData] = useState(entry)
@@ -54,7 +89,7 @@ export default function EditEntry({ isOpen, onClose, entry, onUpdate }) {
               <Label htmlFor="date" className="text-right">
                 Date
               </Label>
-              <Input id="date" name="date" type="date" value={formData.date} onChange={handleChange} className="col-span-3" />
+              <DatePicker id="date" name="date" date={formData.date} setDate={handleChange} />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="time" className="text-right">

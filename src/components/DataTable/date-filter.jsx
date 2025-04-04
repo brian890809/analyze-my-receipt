@@ -84,6 +84,9 @@ export default function DateFilter({ dateRange, setDateRange, onApply, onClear }
               selected={dateRange}
               onSelect={setDateRange}
               numberOfMonths={2}
+              disabled={(date) =>
+                date > new Date() || date < new Date("1900-01-01")
+              }
             />
             <div className="flex justify-end space-x-2 p-3">
               <Button variant="destructive" onClick={() => {

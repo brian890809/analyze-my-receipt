@@ -59,11 +59,19 @@ export const columns = [
         accessorKey: "grandTotal",
         cell: ({ row }) => {
             const amount = roundNum(row.original.grandTotal)
-            const currency = row.original.currency
-            const formatted = new Intl.NumberFormat("en-US", {
-                style: "currency",
-                currency,
-              }).format(amount)
+            const currency = row.original.currency === "$" ? "USD" : row.original.currency
+            let formatted
+            try {
+                formatted = new Intl.NumberFormat("en-US", {
+                    style: "currency",
+                    currency: currency,
+                  }).format(amount)
+            } catch (e) {
+                formatted = new Intl.NumberFormat("en-US", {
+                    style: "currency",
+                    currency: "USD",
+                  }).format(amount)
+            }
             return <div className="text-right font-medium">{formatted}</div>
         }
     },
@@ -73,10 +81,18 @@ export const columns = [
         cell: ({ row }) => {
             const amount = roundNum(row.original.total)
             const currency = row.original.currency
-            const formatted = new Intl.NumberFormat("en-US", {
-                style: "currency",
-                currency,
-              }).format(amount)
+            let formatted
+            try {
+                formatted = new Intl.NumberFormat("en-US", {
+                    style: "currency",
+                    currency: currency,
+                  }).format(amount)
+            } catch (e) {
+                formatted = new Intl.NumberFormat("en-US", {
+                    style: "currency",
+                    currency: "USD",
+                  }).format(amount)
+            }
             return <div className="text-right font-medium">{formatted}</div>
         }
     },
@@ -86,10 +102,18 @@ export const columns = [
         cell: ({ row }) => {
             const amount = roundNum(row.original.tax)
             const currency = row.original.currency
-            const formatted = new Intl.NumberFormat("en-US", {
-                style: "currency",
-                currency,
-              }).format(amount)
+            let formatted
+            try {
+                formatted = new Intl.NumberFormat("en-US", {
+                    style: "currency",
+                    currency: currency,
+                  }).format(amount)
+            } catch (e) {
+                formatted = new Intl.NumberFormat("en-US", {
+                    style: "currency",
+                    currency: "USD",
+                  }).format(amount)
+            }
             return <div className="text-right font-medium">{formatted}</div>
         }
     },
@@ -99,10 +123,18 @@ export const columns = [
         cell: ({ row }) => {
             const amount = roundNum(row.original.tip)
             const currency = row.original.currency
-            const formatted = new Intl.NumberFormat("en-US", {
-                style: "currency",
-                currency,
-              }).format(amount)
+            let formatted
+            try {
+                formatted = new Intl.NumberFormat("en-US", {
+                    style: "currency",
+                    currency: currency,
+                  }).format(amount)
+            } catch (e) {
+                formatted = new Intl.NumberFormat("en-US", {
+                    style: "currency",
+                    currency: "USD",
+                  }).format(amount)
+            }
             return <div className="text-right font-medium">{formatted}</div>
         }
     },  
@@ -119,12 +151,16 @@ export const columns = [
         accessorKey: "currency",
         cell: ({ row }) => {
             const currency = row.original.currency
-            return <div className="text-center font-medium" style={{ textTransform: "uppercase" }}>{currency}</div>
+            return <div className="text-center font-light italic" style={{ textTransform: "uppercase" }}>{currency}</div>
         }
     },
     {
         header: "Source",
         accessorKey: "source",
+        cell: ({ row }) => {
+            const source = row.original.source
+            return <div className="font-light italic" title={source}>{source}</div>
+        }
     },
     {
         header: "",
@@ -132,9 +168,9 @@ export const columns = [
         cell: ({ row, table }) => {
             const entry = row.original
             return (
-            <Button variant="ghost" size="icon" onClick={() => table.options.meta?.handleEdit(entry, row.index)}>
+                <Button variant="ghost" size="icon" onClick={() => table.options.meta?.handleEdit(entry, row.index)}>
                 <Edit />
             </Button>)
         }
-    }
+    },
 ]   

@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 
 import DataTable from '@/components/DataTable/DataTable';
 import Navbar from '@/components/Navbar';
+import { getStandardCurrencyCode } from '@/util/currency-code';
 
 const aggredgateData = (data) => {
   const categories = new Map()
@@ -13,10 +14,9 @@ const aggredgateData = (data) => {
 
   const currencyTotal = categories.get("CurrenciesTotal")
   const categoryTotal = categories.get("CategoriesTotal")
-
   data.forEach((entry) => {
     const category = entry.category
-    const currency = entry.currency
+    const currency = getStandardCurrencyCode(entry.currency)
 
     currencyTotal.set(currency, (currencyTotal.get(currency) || 0) + entry.grandTotal)
     categoryTotal.set(category, (categoryTotal.get(category) || 0) + entry.grandTotal)
@@ -52,7 +52,11 @@ export default function Home() {
     fetch('/api/fetch-data', { method: type, headers, body })
       .then((response) => response.json())
       .then((data) => {
-        setData(data);
+        const unifiedCurrency = data.map(entry => ({
+          ...entry,
+          currency: getStandardCurrencyCode(entry.currency)
+        }))
+        setData(unifiedCurrency);
       });
   }, [userId])
 
