@@ -3,7 +3,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 
-import DataTable from '@/components/DataTable';
+import DataTable from '@/components/DataTable/DataTable';
 import Navbar from '@/components/Navbar';
 
 const aggredgateData = (data) => {
