@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Fragment } from "react"
 import {
   Table,
   TableBody,
@@ -9,10 +9,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import ItemEntry from "@/components/ItemEntry/ItemEntry";
 import {
   flexRender,
   getFilteredRowModel,
   getCoreRowModel,
+  getExpandedRowModel,
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
@@ -69,18 +71,15 @@ const DataTable = ({ customColumns, data }) => {
   const [sorting, setSorting] = useState([])
   const [columnFilters, setColumnFilters] = useState([])
 
-  const [expandedRows, setExpandedRows] = useState([])
   const [openIndex, setOpenIndex] = useState(null)
   const [entry, setEntry] = useState(null)
-  const toggleRow = (id) => {
-    setExpandedRows((prev) => (prev.includes(id) ? prev.filter((rowId) => rowId !== id) : [...prev, id]))
-  }
-  const isRowExpanded = (id) => expandedRows.includes(id)
   
   const table = useReactTable({
     data: filteredData,
     columns: customColumns,
     getCoreRowModel: getCoreRowModel(),
+    getExpandedRowModel: getExpandedRowModel(),
+    getRowCanExpand: () => true,
     getPaginationRowModel: getPaginationRowModel(),
     onSortingChange: setSorting,
     getSortedRowModel: getSortedRowModel(),
@@ -111,36 +110,54 @@ const DataTable = ({ customColumns, data }) => {
       <div className="rounded-md border overflow-x-auto">
         <Table className="min-w-full divide-y divide-gray-200">
           <TableHeader className="bg-gray-50">
-          {table.getHeaderGroups().map((headerGroup) => (
+            {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
+                {headerGroup.headers.map((header) => (
+                  <TableHead className={header.id === "source" ? "max-w-40" : ""} key={header.id}>
+                    {header.isPlaceholder
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
                             header.getContext()
                           )}
                     </TableHead>
-                  )
-                })}
+                ))}
               </TableRow>
             ))}
         </TableHeader>
         <TableBody>
           {table.getRowModel().rows?.length ? (
             table.getRowModel().rows.map((row) => (
-              <TableRow 
-              key={row.id}
-              data-state={row.getIsSelected() && "selected"}
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </TableRow>
+              <Fragment key={row.id}>
+                <TableRow 
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                  >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell className={cell.column.id.endsWith("source") ? "max-w-40" : ""} key={cell.id}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
+                {row.getIsExpanded() && (
+                  <TableRow>
+                    <TableCell colSpan={customColumns.length} className="h-24">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-1/6"></TableHead>
+                            <TableHead className="w-1/3">Description</TableHead>
+                            <TableHead className="w-1/6">Quantity</TableHead>
+                            <TableHead className="w-1/6">Price</TableHead>
+                            <TableHead className="w-1/6">Total</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <ItemEntry items={row.original.items} />
+                      </Table>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </Fragment>
             ))
           ): (
           <TableRow>
@@ -152,14 +169,14 @@ const DataTable = ({ customColumns, data }) => {
         </TableBody>
       </Table>
 
-      {isModalOpen && (
-        <EditEntry
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          entry={entry}
-          onUpdate={handleUpdate}
-        />
-      )}
+        {isModalOpen && (
+          <EditEntry
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            entry={entry}
+            onUpdate={handleUpdate}
+          />
+        )}
       </div>
       <div className="flex items-center justify-end space-x-2 py-4">
         <Button

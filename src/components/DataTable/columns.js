@@ -1,12 +1,23 @@
 "use client"
 
-import { Edit, ArrowUpDown } from "lucide-react"
+import { Edit, ArrowUpDown, ChevronDown, ChevronUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { format, parse } from "date-fns";
 
 const roundNum = num => Math.round((num + Number.EPSILON) * 100) / 100
 
 export const columns = [
+    {
+        header: "",
+        accessorKey: "expand",
+        cell: ({ row }) => {
+            return (
+                <Button variant="ghost" size="icon" onClick={() => row.toggleExpanded()}>
+                    {row.getIsExpanded() ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                </Button>
+            )
+        }
+    },
     {
         header: ({ column }) => (
             <Button
@@ -159,7 +170,7 @@ export const columns = [
         accessorKey: "source",
         cell: ({ row }) => {
             const source = row.original.source
-            return <div className="font-light italic" title={source}>{source}</div>
+            return <div className="font-light italic max-w-40 truncate" title={source}>{source}</div>
         }
     },
     {
