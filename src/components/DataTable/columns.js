@@ -1,12 +1,18 @@
 "use client"
 
-import { Edit, ArrowUpDown, ChevronDown, ChevronUp } from "lucide-react"
+import { Edit, ArrowUpDown, ChevronDown, ChevronUp, Ellipsis, Trash, ListStart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { format, parse } from "date-fns";
+import {
+    DropdownMenu,
+    DropdownMenuTrigger,
+    DropdownMenuContent,
+    DropdownMenuItem,
+} from "@/components/ui/dropdown-menu"
 
 const roundNum = num => Math.round((num + Number.EPSILON) * 100) / 100
 
-export const columns = [
+export const getColumns = (onOpenEdit, onOpenRank) => [
     {
         header: "",
         accessorKey: "expand",
@@ -179,9 +185,18 @@ export const columns = [
         cell: ({ row, table }) => {
             const entry = row.original
             return (
-                <Button variant="ghost" size="icon" onClick={() => table.options.meta?.handleEdit(entry, row.index)}>
-                <Edit />
-            </Button>)
-        }
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                            <Ellipsis />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                        <DropdownMenuItem onSelect={() => onOpenEdit(entry, row.index)}><Edit />Edit</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => onOpenRank(entry, row.index)}><ListStart />Rank</DropdownMenuItem>
+                        <DropdownMenuItem><Trash />Delete</DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            )}
     },
 ]   

@@ -15,7 +15,6 @@ export function LoginForm({
   formData, 
   onInputChange, 
   onSubmit,
-  states,
   ...props
 }) {
   return (

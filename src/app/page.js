@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import DataTable from '@/components/DataTable/DataTable';
 import Navbar from '@/components/Navbar';
 import { getStandardCurrencyCode } from '@/util/currency-code';
-import { parse, format } from "date-fns";
+import { parse } from "date-fns";
 
 const aggredgateData = (data) => {
   const categories = new Map()

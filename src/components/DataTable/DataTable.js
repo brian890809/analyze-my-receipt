@@ -19,16 +19,15 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { columns } from "./columns"
+import { getColumns } from "./columns"
 import { Button } from "@/components/ui/button"
 import EditEntry from "./edit-entry"
 import DateFilter from "./date-filter"
+import SortableDishes from "@/components/SortableDishes"
 
 const DataTable = ({ customColumns, data }) => {
-  if (!customColumns) {
-    customColumns = columns
-  }
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isRankModalOpen, setIsRankModalOpen] = useState(false)
   const [dateRange, setDateRange] = useState(null)
   const [filteredData, setFilteredData] = useState(data)
   useEffect(() => {
@@ -42,15 +41,24 @@ const DataTable = ({ customColumns, data }) => {
       body: JSON.stringify(backend)
     })
     // Update data
-    setIsModalOpen(false)
+    setIsEditModalOpen(false)
     setEntry(null)
   }
   const handleEdit = (entry, index) => {
     setEntry(entry)
     setOpenIndex(index)
-    setIsModalOpen(true)
+    setIsEditModalOpen(true)
+  }
+  const handleRank = (entry, index) => {
+    setEntry(entry)
+    setOpenIndex(index)
+    setIsRankModalOpen(true)
   }
   
+  if (!customColumns) {
+    customColumns = getColumns(handleEdit, handleRank)
+  }
+
   const applyDateFilter = () => {
     if (!dateRange) {
       setFilteredData(data)
@@ -90,10 +98,13 @@ const DataTable = ({ customColumns, data }) => {
       columnFilters,
     },
     meta: {
-      isModalOpen,
-      setIsModalOpen,
-      handleUpdate,
       handleEdit,
+      isEditModalOpen,
+      setIsEditModalOpen,
+      handleRank,
+      isRankModalOpen,
+      setIsRankModalOpen,
+      handleUpdate,
     }
   })
 
@@ -147,12 +158,12 @@ const DataTable = ({ customColumns, data }) => {
                           <TableRow>
                             <TableHead className="w-1/6"></TableHead>
                             <TableHead className="w-1/3">Description</TableHead>
-                            <TableHead className="w-1/6">Quantity</TableHead>
                             <TableHead className="w-1/6">Price</TableHead>
+                            <TableHead className="w-1/6">Quantity</TableHead>
                             <TableHead className="w-1/6">Total</TableHead>
                           </TableRow>
                         </TableHeader>
-                        <ItemEntry items={row.original.items} />
+                        <ItemEntry currency={row.original.currency} items={row.original.items} />
                       </Table>
                     </TableCell>
                   </TableRow>
@@ -169,14 +180,20 @@ const DataTable = ({ customColumns, data }) => {
         </TableBody>
       </Table>
 
-        {isModalOpen && (
-          <EditEntry
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-            entry={entry}
-            onUpdate={handleUpdate}
-          />
-        )}
+      {isEditModalOpen && (
+        <EditEntry
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          entry={entry}
+          onUpdate={handleUpdate}
+        />
+      )}
+      {isRankModalOpen && (
+        <SortableDishes
+          isOpen={isRankModalOpen}
+          onClose={() => setIsRankModalOpen(false)}
+        />
+      )}
       </div>
       <div className="flex items-center justify-end space-x-2 py-4">
         <Button

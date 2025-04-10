@@ -11,7 +11,7 @@ import { marshall } from "@aws-sdk/util-dynamodb";
 
 export default function EditEntry({ isOpen, onClose, entry, onUpdate }) {
   const [formData, setFormData] = useState(entry)
-  const [dateModalOpen, setDateModalOpen] = useState(false)
+  const [dateEditModalOpen, setDateEditModalOpen] = useState(false)
   const [updatedItems, setUpdatedItems] = useState({uuid: entry.uuid, merchant: entry.merchant, time: entry.time})
   // Update form data when user changes
   useEffect(() => {
@@ -32,7 +32,7 @@ export default function EditEntry({ isOpen, onClose, entry, onUpdate }) {
   const handleDateChange = (date) => {
     setUpdatedItems((prev) => ({ ...prev, date: date }))
     setFormData((prev) => ({ ...prev, date: date }))
-    setDateModalOpen(false)
+    setDateEditModalOpen(false)
   }
 
   const handleSubmit = (e) => {
@@ -67,8 +67,8 @@ export default function EditEntry({ isOpen, onClose, entry, onUpdate }) {
                 name="date" 
                 date={formData.date} 
                 setDate={handleDateChange} 
-                open={dateModalOpen} 
-                onOpenChange={setDateModalOpen} />
+                open={dateEditModalOpen} 
+                onOpenChange={setDateEditModalOpen} />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="time" className="text-right">
