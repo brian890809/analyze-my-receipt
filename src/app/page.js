@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 
 import DataTable from '@/components/DataTable/DataTable';
 import Navbar from '@/components/Navbar';
+import TasteProfile from '@/components/TasteProfile';
 import { getStandardCurrencyCode } from '@/util/currency-code';
 import { parse } from "date-fns";
 
@@ -30,6 +31,7 @@ export default function Home() {
   const [userId, setUserId] = useState(null)
   const [data, setData] = useState([]);
   const router = useRouter();
+
   useEffect(() => {
     if (!loading && !user) {
       router.push("/login"); // Redirect to login if not authenticated
@@ -78,23 +80,30 @@ export default function Home() {
     <>
       <Navbar />
       <div className="min-h-screen p-8">
-        <h1 className="text-2xl font-bold mb-4">Your Current Spending</h1>
-        <div className="flex flex-row justify-around mb-4">
-          <div>
-            <h2 className="text-xl font-bold">Total Spent by Currency</h2>
-            <ul>
-              {Array.from(currencyTotal).map(([currency, total]) => (
-                <li key={currency}>{currency}: {Math.round((total + Number.EPSILON) * 100) / 100}</li>
-              ))}
-            </ul>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="md:col-span-2">
+            <h1 className="text-2xl font-bold mb-4">Your Current Spending</h1>
+            <div className="flex flex-row justify-around mb-4">
+              <div>
+                <h2 className="text-xl font-bold">Total Spent by Currency</h2>
+                <ul>
+                  {Array.from(currencyTotal).map(([currency, total]) => (
+                    <li key={currency}>{currency}: {Math.round((total + Number.EPSILON) * 100) / 100}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h2 className="text-xl font-bold">Total Spent by Category</h2>
+                <ul>
+                  {Array.from(categoryTotal).map(([category, total]) => (
+                    <li key={category}>{category}: {Math.round((total + Number.EPSILON) * 100) / 100}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
           </div>
-          <div>
-            <h2 className="text-xl font-bold">Total Spent by Category</h2>
-            <ul>
-              {Array.from(categoryTotal).map(([category, total]) => (
-                <li key={category}>{category}: {Math.round((total + Number.EPSILON) * 100) / 100}</li>
-              ))}
-            </ul>
+          <div className="md:col-span-1">
+            <TasteProfile />
           </div>
         </div>
         <DataTable data={sortedByDate} />

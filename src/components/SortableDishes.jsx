@@ -1,5 +1,8 @@
 'use client';
 
+import { useState } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { Star } from 'lucide-react';
 import {
     DndContext,
     closestCenter,
@@ -14,18 +17,28 @@ import {
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
 
-const initialDishes = [
-    'Tteokbokki',
-    'Bibimbap',
-    'Japchae',
-    'Kimchi Jjigae',
-    'Samgyeopsal',
-];
+function StarRating({ rating, onRate }) {
+    return (
+        <div className="flex items-center space-x-1">
+            {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                    key={star}
+                    onClick={() => onRate(star)}
+                    className={`focus:outline-none ${
+                        star <= rating ? 'text-yellow-400' : 'text-gray-300'
+                    }`}
+                >
+                    <Star className="w-6 h-6" />
+                </button>
+            ))}
+        </div>
+    );
+}
 
-function SortableItem({ id }) {
+function SortableItem({ id, rating, onRate }) {
     const {
         attributes,
         listeners,
@@ -45,73 +58,108 @@ function SortableItem({ id }) {
             style={style}
             {...attributes}
             {...listeners}
-            className="p-4 mb-3 bg-white rounded-xl border border-gray-200 shadow-sm cursor-grab active:cursor-grabbing"
+            className="p-4 mb-3 bg-white rounded-xl border border-gray-200 shadow-sm"
         >
-            {id}
+            <div className="flex justify-between items-center">
+                <span className="cursor-grab active:cursor-grabbing">{id}</span>
+                <StarRating rating={rating} onRate={(value) => onRate(id, value)} />
+            </div>
         </div>
     );
 }
 
-export default function SortableDishes({ isOpen, onClose }) {
-    const [items, setItems] = useState(initialDishes);
+export default function SortableDishes({ isOpen, onClose, entry }) {
+    const { user } = useAuth();
+    const [items, setItems] = useState(entry?.items?.map(item => item.description) || []);
+    const [ratings, setRatings] = useState({});
     const [submitting, setSubmitting] = useState(false);
 
     const sensors = useSensors(useSensor(PointerSensor));
 
+    const handleRate = (dishName, rating) => {
+        setRatings(prev => ({
+            ...prev,
+            [dishName]: rating
+        }));
+    };
+
     const handleSubmit = async () => {
         setSubmitting(true);
+        try {
+            // Submit each rated dish
+            const ratingPromises = Object.entries(ratings).map(([dishName, rating]) => {
+                return fetch('/api/dish-ratings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: user.uid,
+                        rating: {
+                            dishName,
+                            restaurant: entry.merchant,
+                            rating,
+                            dateEaten: entry.date,
+                            modifications: []
+                        }
+                    })
+                });
+            });
 
-        console.log(items)
-        // Simulated API call
-        // await fetch('/api/save-rankings', {
-        //     method: 'POST',
-        //     headers: { 'Content-Type': 'application/json' },
-        //     body: JSON.stringify({
-        //         userId: 'example-user-id',
-        //         rankedDishes: items.map((dish, index) => ({
-        //             dish,
-        //             rank: index + 1,
-        //         })),
-        //     }),
-        // });
+            await Promise.all(ratingPromises);
 
-        setSubmitting(false);
-        alert('Ranking submitted!');
+            // Update taste profile after saving ratings
+            await fetch(`/api/taste-profile?userId=${user.uid}`, {
+                method: 'POST'
+            });
+
+            onClose();
+        } catch (error) {
+            console.error('Error submitting ratings:', error);
+            alert('Failed to submit ratings. Please try again.');
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent> 
+            <DialogContent className="sm:max-w-md"> 
                 <DialogHeader>
-                    <DialogTitle>Rank the Dishes 🍜</DialogTitle>
+                    <DialogTitle>Rate the Dishes 🍜</DialogTitle>
                 </DialogHeader>
-                    <div className="max-w-md mx-auto mt-10 p-6 bg-gray-50 rounded-2xl shadow-md">
-                        <DndContext
-                            sensors={sensors}
-                            collisionDetection={closestCenter}
-                            onDragEnd={({ active, over }) => {
-                                if (active.id !== over?.id) {
-                                    const oldIndex = items.indexOf(active.id);
-                                    const newIndex = items.indexOf(over?.id);
-                                    setItems(arrayMove(items, oldIndex, newIndex));
-                                }
-                            }}
-                        >
-                            <SortableContext items={items} strategy={verticalListSortingStrategy}>
-                                {items.map((dish) => (
-                                    <SortableItem key={dish} id={dish} />
-                                ))}
-                            </SortableContext>
-                        </DndContext>
-
-                        <button
-                            onClick={handleSubmit}
-                            disabled={submitting}
-                            className="mt-6 w-full py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-50"
-                        >
-                            {submitting ? 'Submitting...' : 'Submit Ranking'}
-                        </button>
-                    </div>
+                <StarRating rating={0} onRate={() => {}} />
+                <div className="max-w-md mx-auto mt-4">
+                    <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={({ active, over }) => {
+                            if (active.id !== over?.id) {
+                                const oldIndex = items.indexOf(active.id);
+                                const newIndex = items.indexOf(over?.id);
+                                setItems(arrayMove(items, oldIndex, newIndex));
+                            }
+                        }}
+                    >
+                        <SortableContext items={items} strategy={verticalListSortingStrategy}>
+                            {items.map((dish) => (
+                                <SortableItem 
+                                    key={dish} 
+                                    id={dish} 
+                                    rating={ratings[dish] || 0}
+                                    onRate={handleRate}
+                                />
+                            ))}
+                        </SortableContext>
+                    </DndContext>
+                </div>
+                <DialogFooter>
+                    <Button
+                        onClick={handleSubmit}
+                        disabled={submitting}
+                        className="w-full"
+                    >
+                        {submitting ? 'Submitting...' : 'Submit Ratings'}
+                    </Button>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );

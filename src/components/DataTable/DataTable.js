@@ -192,6 +192,7 @@ const DataTable = ({ customColumns, data }) => {
         <SortableDishes
           isOpen={isRankModalOpen}
           onClose={() => setIsRankModalOpen(false)}
+          entry={entry}
         />
       )}
       </div>
