@@ -20,13 +20,20 @@ import { CSS } from '@dnd-kit/utilities';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 
-function StarRating({ rating, onRate }) {
+function StarRating({ rating, rateCurrent }) {
+    const handleClick = (e, starValue) => {
+        e.preventDefault();
+        e.stopPropagation();
+        rateCurrent(starValue);
+    };
+
     return (
-        <div className="flex items-center space-x-1">
+        <div className="flex items-center space-x-1" onClick={(e) => e.stopPropagation()}>
             {[1, 2, 3, 4, 5].map((star) => (
                 <button
                     key={star}
-                    onClick={() => onRate(star)}
+                    onClick={(e) => handleClick(e, star)}
+                    type="button"
                     className={`focus:outline-none ${
                         star <= rating ? 'text-yellow-400' : 'text-gray-300'
                     }`}
@@ -38,7 +45,7 @@ function StarRating({ rating, onRate }) {
     );
 }
 
-function SortableItem({ id, rating, onRate }) {
+function SortableItem({ id, rating, handleRate }) {
     const {
         attributes,
         listeners,
@@ -52,17 +59,32 @@ function SortableItem({ id, rating, onRate }) {
         transition,
     };
 
+    const dragHandleListeners = {
+        ...listeners,
+        onMouseDown: (e) => {
+            // Only apply drag listeners to the text content
+            if (e.target.tagName === 'SPAN') {
+                listeners.onMouseDown(e);
+            }
+        },
+        onTouchStart: (e) => {
+            // Only apply drag listeners to the text content
+            if (e.target.tagName === 'SPAN') {
+                listeners.onTouchStart(e);
+            }
+        }
+    };
+
     return (
         <div
             ref={setNodeRef}
             style={style}
             {...attributes}
-            {...listeners}
             className="p-4 mb-3 bg-white rounded-xl border border-gray-200 shadow-sm"
         >
             <div className="flex justify-between items-center">
-                <span className="cursor-grab active:cursor-grabbing">{id}</span>
-                <StarRating rating={rating} onRate={(value) => onRate(id, value)} />
+                <span {...dragHandleListeners} className="cursor-grab active:cursor-grabbing">{id}</span>
+                <StarRating rating={rating} rateCurrent={(star) => handleRate(id, star)} />
             </div>
         </div>
     );
@@ -85,6 +107,11 @@ export default function SortableDishes({ isOpen, onClose, entry }) {
 
     const handleSubmit = async () => {
         setSubmitting(true);
+        if (Object.keys(ratings).length === 0) {
+            alert('Please rate at least one dish.');
+            setSubmitting(false);
+            return;
+        }
         try {
             // Submit each rated dish
             const ratingPromises = Object.entries(ratings).map(([dishName, rating]) => {
@@ -126,7 +153,6 @@ export default function SortableDishes({ isOpen, onClose, entry }) {
                 <DialogHeader>
                     <DialogTitle>Rate the Dishes 🍜</DialogTitle>
                 </DialogHeader>
-                <StarRating rating={0} onRate={() => {}} />
                 <div className="max-w-md mx-auto mt-4">
                     <DndContext
                         sensors={sensors}
@@ -139,16 +165,22 @@ export default function SortableDishes({ isOpen, onClose, entry }) {
                             }
                         }}
                     >
+                        <div className="mb-4">
+                            <p className="text-sm text-gray-500">Your favorite dish</p>
+                        </div>
                         <SortableContext items={items} strategy={verticalListSortingStrategy}>
                             {items.map((dish) => (
                                 <SortableItem 
                                     key={dish} 
                                     id={dish} 
                                     rating={ratings[dish] || 0}
-                                    onRate={handleRate}
+                                    handleRate={handleRate}
                                 />
                             ))}
                         </SortableContext>
+                        <div className="mb-4">
+                            <p className="text-sm text-gray-500">Not so much</p>
+                        </div>
                     </DndContext>
                 </div>
                 <DialogFooter>
