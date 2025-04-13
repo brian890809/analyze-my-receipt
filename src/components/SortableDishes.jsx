@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Star } from 'lucide-react';
 import {
@@ -19,6 +19,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input";
 
 function StarRating({ rating, rateCurrent }) {
     const handleClick = (e, starValue) => {
@@ -45,7 +46,7 @@ function StarRating({ rating, rateCurrent }) {
     );
 }
 
-function SortableItem({ id, rating, handleRate }) {
+function SortableItem({ id, rating, handleRate, tags, onTagAdd }) {
     const {
         attributes,
         listeners,
@@ -54,22 +55,42 @@ function SortableItem({ id, rating, handleRate }) {
         transition,
     } = useSortable({ id });
 
+    const [tagInput, setTagInput] = useState('');
+    const [tagSuggestions, setTagSuggestions] = useState([]);
+
+    useEffect(() => {
+        // Fetch tag suggestions
+        fetch('/api/dish-tags')
+            .then(res => res.json())
+            .then(data => {
+                // Sort by usage count
+                setTagSuggestions(data.map(t => t.tag));
+            })
+            .catch(console.error);
+    }, []);
+
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
     };
 
+    const handleTagAdd = (e) => {
+        e.preventDefault();
+        if (tagInput.trim()) {
+            onTagAdd(id, tagInput.trim());
+            setTagInput('');
+        }
+    };
+
     const dragHandleListeners = {
         ...listeners,
         onMouseDown: (e) => {
-            // Only apply drag listeners to the text content
-            if (e.target.tagName === 'SPAN') {
+            if (e.target.tagName === 'SPAN' && listeners?.onMouseDown) {
                 listeners.onMouseDown(e);
             }
         },
         onTouchStart: (e) => {
-            // Only apply drag listeners to the text content
-            if (e.target.tagName === 'SPAN') {
+            if (e.target.tagName === 'SPAN' && listeners?.onTouchStart) {
                 listeners.onTouchStart(e);
             }
         }
@@ -82,9 +103,34 @@ function SortableItem({ id, rating, handleRate }) {
             {...attributes}
             className="p-4 mb-3 bg-white rounded-xl border border-gray-200 shadow-sm"
         >
-            <div className="flex justify-between items-center">
-                <span {...dragHandleListeners} className="cursor-grab active:cursor-grabbing">{id}</span>
-                <StarRating rating={rating} rateCurrent={(star) => handleRate(id, star)} />
+            <div className="flex flex-col gap-2">
+                <div className="flex justify-between items-center">
+                    <span {...dragHandleListeners} className="cursor-grab active:cursor-grabbing">{id}</span>
+                    <StarRating rating={rating} rateCurrent={(star) => handleRate(id, star)} />
+                </div>
+                <div className="flex flex-wrap gap-1">
+                    {tags?.map((tag, index) => (
+                        <span key={index} className="px-2 py-1 bg-primary/10 rounded-full text-sm">
+                            {tag}
+                        </span>
+                    ))}
+                </div>
+                <form onSubmit={handleTagAdd} className="flex gap-2">
+                    <Input
+                        type="text"
+                        value={tagInput}
+                        onChange={(e) => setTagInput(e.target.value)}
+                        placeholder="Add a taste tag..."
+                        list={`suggestions-${id}`}
+                        className="flex-1"
+                    />
+                    <datalist id={`suggestions-${id}`}>
+                        {tagSuggestions.map((tag) => (
+                            <option key={tag} value={tag} />
+                        ))}
+                    </datalist>
+                    <Button type="submit" size="sm">Add</Button>
+                </form>
             </div>
         </div>
     );
@@ -94,6 +140,7 @@ export default function SortableDishes({ isOpen, onClose, entry }) {
     const { user } = useAuth();
     const [items, setItems] = useState(entry?.items?.map(item => item.description) || []);
     const [ratings, setRatings] = useState({});
+    const [dishTags, setDishTags] = useState({});
     const [submitting, setSubmitting] = useState(false);
 
     const sensors = useSensors(useSensor(PointerSensor));
@@ -103,6 +150,28 @@ export default function SortableDishes({ isOpen, onClose, entry }) {
             ...prev,
             [dishName]: rating
         }));
+    };
+
+    const handleTagAdd = (dishName, tag) => {
+        setDishTags(prev => ({
+            ...prev,
+            [dishName]: [...(prev[dishName] || []), tag]
+        }));
+        
+        setRatings(prev => ({
+            ...prev,
+            [dishName]: {
+                ...prev[dishName],
+                tags: [...(dishTags[dishName] || []), tag]
+            }
+        }));
+
+        // Save the tag to suggestions
+        fetch('/api/dish-tags', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tag, userId: user.uid })
+        }).catch(console.error);
     };
 
     const handleSubmit = async () => {
@@ -125,7 +194,8 @@ export default function SortableDishes({ isOpen, onClose, entry }) {
                             restaurant: entry.merchant,
                             rating,
                             dateEaten: entry.date,
-                            modifications: []
+                            modifications: [],
+                            tags: dishTags[dishName] || []
                         }
                     })
                 });
@@ -175,6 +245,8 @@ export default function SortableDishes({ isOpen, onClose, entry }) {
                                     id={dish} 
                                     rating={ratings[dish] || 0}
                                     handleRate={handleRate}
+                                    tags={dishTags[dish] || []}
+                                    onTagAdd={handleTagAdd}
                                 />
                             ))}
                         </SortableContext>
