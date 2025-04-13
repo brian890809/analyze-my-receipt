@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Star } from 'lucide-react';
 import {
@@ -142,6 +142,7 @@ export default function SortableDishes({ isOpen, onClose, entry }) {
     const [ratings, setRatings] = useState({});
     const [dishTags, setDishTags] = useState({});
     const [submitting, setSubmitting] = useState(false);
+    const initialFocusRef = useRef(null);
 
     const sensors = useSensors(useSensor(PointerSensor));
 
@@ -217,9 +218,30 @@ export default function SortableDishes({ isOpen, onClose, entry }) {
         }
     };
 
+    // Handle dialog closure with delay to avoid conflict
+    const handleDialogClose = () => {
+        // Delay closure to prevent focus management conflicts
+        setTimeout(() => {
+            onClose();
+        }, 0);
+    };
+
     return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-md"> 
+        <Dialog open={isOpen} onOpenChange={handleDialogClose}>
+            <DialogContent 
+                className="sm:max-w-md"
+                onInteractOutside={(e) => {
+                    // Prevent interaction outside dialog when dropdown was the source
+                    if (e.target.closest('[role="menu"]')) {
+                        e.preventDefault();
+                    }
+                }}
+                onEscapeKeyDown={(e) => {
+                    // Prevent immediate closure on Escape to manage focus properly
+                    e.preventDefault();
+                    handleDialogClose();
+                }}
+            > 
                 <DialogHeader>
                     <DialogTitle>Rate the Dishes 🍜</DialogTitle>
                 </DialogHeader>
@@ -235,7 +257,7 @@ export default function SortableDishes({ isOpen, onClose, entry }) {
                             }
                         }}
                     >
-                        <div className="mb-4">
+                        <div className="mb-4" ref={initialFocusRef} tabIndex={-1}>
                             <p className="text-sm text-gray-500">Your favorite dish</p>
                         </div>
                         <SortableContext items={items} strategy={verticalListSortingStrategy}>
@@ -250,18 +272,15 @@ export default function SortableDishes({ isOpen, onClose, entry }) {
                                 />
                             ))}
                         </SortableContext>
-                        <div className="mb-4">
-                            <p className="text-sm text-gray-500">Not so much</p>
-                        </div>
                     </DndContext>
                 </div>
-                <DialogFooter>
-                    <Button
-                        onClick={handleSubmit}
+                <DialogFooter className="mt-6">
+                    <Button variant="outline" onClick={handleDialogClose}>Cancel</Button>
+                    <Button 
+                        onClick={handleSubmit} 
                         disabled={submitting}
-                        className="w-full"
                     >
-                        {submitting ? 'Submitting...' : 'Submit Ratings'}
+                        {submitting ? 'Saving...' : 'Save Ratings'}
                     </Button>
                 </DialogFooter>
             </DialogContent>

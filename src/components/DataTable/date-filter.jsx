@@ -8,7 +8,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { CalendarIcon } from "lucide-react"
+import { CalendarIcon, Calendar as CalendarIconOutline, ChevronDown } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 
@@ -29,80 +29,107 @@ export default function DateFilter({ dateRange, setDateRange, onApply, onClear }
           <Button
             variant="outline"
             className={cn(
-              "w-[240px] justify-start text-left font-normal",
+              "w-[280px] justify-start text-left font-normal rounded-xl border border-border/60 bg-white/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-200",
               !dateRange && "text-muted-foreground"
             )}
           >
-            <CalendarIcon className="mr-2 h-4 w-4" />
+            <CalendarIconOutline className="mr-2 h-4 w-4 text-primary" />
             {dateRange?.from ? (
               dateRange.to ? (
                 <>
-                  {format(dateRange.from, "LLL dd, y")} -{" "}
-                  {format(dateRange.to, "LLL dd, y")}
+                  <span className="font-medium">{format(dateRange.from, "LLL dd, y")}</span>
+                  <span className="mx-1 text-muted-foreground">to</span>
+                  <span className="font-medium">{format(dateRange.to, "LLL dd, y")}</span>
                 </>
               ) : (
-                format(dateRange.from, "LLL dd, y")
+                <span className="font-medium">{format(dateRange.from, "LLL dd, y")}</span>
               )
             ) : (
-              <span>Pick a date range</span>
+              <span>Select date range</span>
             )}
+            <ChevronDown className="ml-auto h-4 w-4 text-muted-foreground" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
-          <div className="p-3">
-            <div className="flex flex-row space-y-2">
+        <PopoverContent 
+          className="w-auto p-0 rounded-xl border border-border/60 bg-white/90 backdrop-blur-md shadow-xl" 
+          align="start"
+          sideOffset={8}
+        >
+          <div className="p-4 space-y-4">
+            <div className="grid grid-cols-3 gap-2">
               <Button
                 variant="ghost"
-                className="justify-start"
+                size="sm"
+                className="rounded-lg justify-center hover:bg-primary/5 hover:text-primary"
                 onClick={() => handleQuickSelect(7)}
               >
                 Last 7 days
               </Button>
               <Button
                 variant="ghost"
-                className="justify-start"
+                size="sm"
+                className="rounded-lg justify-center hover:bg-primary/5 hover:text-primary"
                 onClick={() => handleQuickSelect(30)}
               >
                 Last 30 days
               </Button>
               <Button
                 variant="ghost"
-                className="justify-start"
+                size="sm"
+                className="rounded-lg justify-center hover:bg-primary/5 hover:text-primary"
                 onClick={() => {
                   const start = new Date()
                   start.setDate(1)
                   setDateRange({ from: start, to: new Date() })
                 }}
               >
-                Current month
+                This month
               </Button>
             </div>
-            <Calendar
-              initialFocus
-              mode="range"
-              defaultMonth={dateRange?.from}
-              selected={dateRange}
-              onSelect={setDateRange}
-              numberOfMonths={2}
-              disabled={(date) =>
-                date > new Date() || date < new Date("1900-01-01")
-              }
-            />
-            <div className="flex justify-end space-x-2 p-3">
-              <Button variant="destructive" onClick={() => {
-                onClear()
-                setIsOpen(false)
-              }}
+            
+            <div className="border-t border-border/30 pt-4">
+              <Calendar
+                initialFocus
+                mode="range"
+                defaultMonth={dateRange?.from}
+                selected={dateRange}
+                onSelect={setDateRange}
+                numberOfMonths={2}
+                className="rounded-lg"
+                disabled={(date) =>
+                  date > new Date() || date < new Date("1900-01-01")
+                }
+              />
+            </div>
+            
+            <div className="flex justify-end items-center gap-2 pt-2 border-t border-border/30">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => {
+                  onClear()
+                  setIsOpen(false)
+                }}
+                className="hover:bg-destructive/5 hover:text-destructive"
               >
                 Clear
               </Button>
-              <Button variant="outline" onClick={() => setIsOpen(false)}>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setIsOpen(false)}
+                className="hover:bg-primary/5"
+              >
                 Cancel
               </Button>
-              <Button onClick={() => {
-                onApply()
-                setIsOpen(false)
-              }}>
+              <Button 
+                size="sm"
+                onClick={() => {
+                  onApply()
+                  setIsOpen(false)
+                }}
+                className="shadow-sm"
+              >
                 Apply
               </Button>
             </div>
