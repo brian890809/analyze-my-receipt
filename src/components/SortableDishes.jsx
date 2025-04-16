@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { Star } from 'lucide-react';
+import { Star, X } from 'lucide-react';
 import {
     DndContext,
     closestCenter,
@@ -46,7 +46,7 @@ function StarRating({ rating, rateCurrent }) {
     );
 }
 
-function SortableItem({ id, rating, handleRate, tags, onTagAdd }) {
+function SortableItem({ id, rating, handleRate, tags, onTagAdd, onTagRemove }) {
     const {
         attributes,
         listeners,
@@ -110,8 +110,15 @@ function SortableItem({ id, rating, handleRate, tags, onTagAdd }) {
                 </div>
                 <div className="flex flex-wrap gap-1">
                     {tags?.map((tag, index) => (
-                        <span key={index} className="px-2 py-1 bg-primary/10 rounded-full text-sm">
+                        <span key={index} className="px-2 py-1 bg-primary/10 rounded-full text-sm flex items-center">
                             {tag}
+                            <button 
+                                onClick={() => onTagRemove(id, tag)}
+                                className="ml-1 text-gray-500 hover:text-gray-700"
+                                aria-label="Remove tag"
+                            >
+                                <X className="w-3 h-3" />
+                            </button>
                         </span>
                     ))}
                 </div>
@@ -142,9 +149,63 @@ export default function SortableDishes({ isOpen, onClose, entry }) {
     const [ratings, setRatings] = useState({});
     const [dishTags, setDishTags] = useState({});
     const [submitting, setSubmitting] = useState(false);
+    const [loading, setLoading] = useState(true);
     const initialFocusRef = useRef(null);
 
     const sensors = useSensors(useSensor(PointerSensor));
+
+    // Create a function to generate dishId for lookup
+    const createDishId = (dishName, restaurant) => {
+        return `${restaurant.toLowerCase()}_${dishName.toLowerCase()}`.replace(/[^a-z0-9]/g, '_');
+    };
+
+    // Fetch existing ratings and tags when component mounts
+    useEffect(() => {
+        if (!isOpen || !user?.uid || !entry?.merchant) return;
+
+        const fetchExistingRatings = async () => {
+            setLoading(true);
+            try {
+                const response = await fetch(`/api/dish-ratings?userId=${user.uid}`);
+                if (response.ok) {
+                    const userRatings = await response.json();
+                    // Initialize temporary storage for ratings and tags
+                    const newRatings = {};
+                    const newDishTags = {};
+                    
+                    // For each dish in the current entry, find if we have a rating for it
+                    items.forEach(dishName => {
+                        const dishId = createDishId(dishName, entry.merchant);
+                        
+                        // Find the rating for this dish
+                        const existingRating = userRatings.find(rating => 
+                            rating.dishId === dishId && 
+                            rating.dishName.toLowerCase() === dishName.toLowerCase()
+                        );
+                        if (existingRating) {
+                            // Store the numeric rating
+                            newRatings[dishName] = parseInt(existingRating.rating);
+                            
+                            // Store tags if they exist (they'll be in an array or null)
+                            if (existingRating.tags && Array.isArray(existingRating.tags)) {
+                                newDishTags[dishName] = existingRating.tags;
+                            }
+                        }
+                    });
+                    
+                    // Update state with the fetched data
+                    setRatings(newRatings);
+                    setDishTags(newDishTags);
+                }
+            } catch (error) {
+                console.error('Error fetching existing ratings:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchExistingRatings();
+    }, [isOpen, user, entry, items]);
 
     const handleRate = (dishName, rating) => {
         setRatings(prev => ({
@@ -154,25 +215,23 @@ export default function SortableDishes({ isOpen, onClose, entry }) {
     };
 
     const handleTagAdd = (dishName, tag) => {
+        setDishTags(prev => {
+            // Check if tag already exists to prevent duplicates
+            if (prev[dishName]?.includes(tag)) {
+                return prev;
+            }
+            return {
+                ...prev,
+                [dishName]: [...(prev[dishName] || []), tag]
+            };
+        });
+    };
+    
+    const handleTagRemove = (dishName, tagToRemove) => {
         setDishTags(prev => ({
             ...prev,
-            [dishName]: [...(prev[dishName] || []), tag]
+            [dishName]: prev[dishName]?.filter(tag => tag !== tagToRemove) || []
         }));
-        
-        setRatings(prev => ({
-            ...prev,
-            [dishName]: {
-                ...prev[dishName],
-                tags: [...(dishTags[dishName] || []), tag]
-            }
-        }));
-
-        // Save the tag to suggestions
-        fetch('/api/dish-tags', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ tag, userId: user.uid })
-        }).catch(console.error);
     };
 
     const handleSubmit = async () => {
@@ -183,6 +242,23 @@ export default function SortableDishes({ isOpen, onClose, entry }) {
             return;
         }
         try {
+            // Collect all tags to submit in batch
+            const allTags = [];
+            Object.entries(dishTags).forEach(([dishName, tags]) => {
+                tags.forEach(tag => {
+                    allTags.push({ tag, userId: user.uid });
+                });
+            });
+            
+            // Submit tags in batch if there are any
+            if (allTags.length > 0) {
+                await fetch('/api/dish-tags/batch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tags: allTags })
+                });
+            }
+
             // Submit each rated dish
             const ratingPromises = Object.entries(ratings).map(([dishName, rating]) => {
                 return fetch('/api/dish-ratings', {
@@ -246,39 +322,46 @@ export default function SortableDishes({ isOpen, onClose, entry }) {
                     <DialogTitle>Rate the Dishes 🍜</DialogTitle>
                 </DialogHeader>
                 <div className="max-w-md mx-auto mt-4">
-                    <DndContext
-                        sensors={sensors}
-                        collisionDetection={closestCenter}
-                        onDragEnd={({ active, over }) => {
-                            if (active.id !== over?.id) {
-                                const oldIndex = items.indexOf(active.id);
-                                const newIndex = items.indexOf(over?.id);
-                                setItems(arrayMove(items, oldIndex, newIndex));
-                            }
-                        }}
-                    >
-                        <div className="mb-4" ref={initialFocusRef} tabIndex={-1}>
-                            <p className="text-sm text-gray-500">Your favorite dish</p>
+                    {loading ? (
+                        <div className="flex justify-center items-center py-8">
+                            <p className="text-gray-500">Loading your previous ratings...</p>
                         </div>
-                        <SortableContext items={items} strategy={verticalListSortingStrategy}>
-                            {items.map((dish) => (
-                                <SortableItem 
-                                    key={dish} 
-                                    id={dish} 
-                                    rating={ratings[dish] || 0}
-                                    handleRate={handleRate}
-                                    tags={dishTags[dish] || []}
-                                    onTagAdd={handleTagAdd}
-                                />
-                            ))}
-                        </SortableContext>
-                    </DndContext>
+                    ) : (
+                        <DndContext
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={({ active, over }) => {
+                                if (active.id !== over?.id) {
+                                    const oldIndex = items.indexOf(active.id);
+                                    const newIndex = items.indexOf(over?.id);
+                                    setItems(arrayMove(items, oldIndex, newIndex));
+                                }
+                            }}
+                        >
+                            <div className="mb-4" ref={initialFocusRef} tabIndex={-1}>
+                                <p className="text-sm text-gray-500">Your favorite dish</p>
+                            </div>
+                            <SortableContext items={items} strategy={verticalListSortingStrategy}>
+                                {items.map((dish) => (
+                                    <SortableItem 
+                                        key={dish} 
+                                        id={dish} 
+                                        rating={ratings[dish] || 0}
+                                        handleRate={handleRate}
+                                        tags={dishTags[dish] || []}
+                                        onTagAdd={handleTagAdd}
+                                        onTagRemove={handleTagRemove}
+                                    />
+                                ))}
+                            </SortableContext>
+                        </DndContext>
+                    )}
                 </div>
                 <DialogFooter className="mt-6">
                     <Button variant="outline" onClick={handleDialogClose}>Cancel</Button>
                     <Button 
                         onClick={handleSubmit} 
-                        disabled={submitting}
+                        disabled={submitting || loading}
                     >
                         {submitting ? 'Saving...' : 'Save Ratings'}
                     </Button>

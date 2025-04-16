@@ -101,7 +101,6 @@ export default function Home() {
       <div className="min-h-screen p-4 md:p-8 container mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="md:col-span-2">
-            <h1 className="text-2xl font-heading font-bold mb-6 text-foreground/90">Spending Overview</h1>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Currency Summary Card */}
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-border/40 p-6 transition-all hover:shadow-md">

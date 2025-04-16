@@ -25,7 +25,7 @@ const saveDishRating = async (userId, rating) => {
         rating: { N: rating.rating.toString() },
         dateEaten: { S: rating.dateEaten },
         tags: rating.tags ? { SS: rating.tags } : { NULL: true },
-        modifications: rating.modifications ? { SS: rating.modifications } : { NULL: true },
+        modifications: rating.modifications.length > 0 ? { SS: rating.modifications } : { NULL: true },
         createdAt: { N: Date.now().toString() }
     };
 
@@ -56,7 +56,13 @@ const getUserRatings = async (userId) => {
     const command = new QueryCommand(params);
     try {
         const result = await db.send(command);
-        return result.Items.map(item => unmarshall(item));
+        return result.Items.map(item => {
+            const unmarshalledItem = unmarshall(item);
+            return {
+                ...unmarshalledItem,
+                tags: unmarshalledItem.tags ? Array.from(unmarshalledItem.tags) : []
+            };
+        });
     } catch (error) {
         console.error("Error fetching user ratings:", error);
         throw error;
