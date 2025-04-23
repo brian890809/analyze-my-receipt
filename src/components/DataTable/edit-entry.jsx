@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -11,8 +11,10 @@ import { marshall } from "@aws-sdk/util-dynamodb";
 
 export default function EditEntry({ isOpen, onClose, entry, onUpdate }) {
   const [formData, setFormData] = useState(entry)
-  const [dateModalOpen, setDateModalOpen] = useState(false)
+  const [dateEditModalOpen, setDateEditModalOpen] = useState(false)
   const [updatedItems, setUpdatedItems] = useState({uuid: entry.uuid, merchant: entry.merchant, time: entry.time})
+  const initialFocusRef = useRef(null)
+  
   // Update form data when user changes
   useEffect(() => {
     setFormData(entry)
@@ -32,7 +34,7 @@ export default function EditEntry({ isOpen, onClose, entry, onUpdate }) {
   const handleDateChange = (date) => {
     setUpdatedItems((prev) => ({ ...prev, date: date }))
     setFormData((prev) => ({ ...prev, date: date }))
-    setDateModalOpen(false)
+    setDateEditModalOpen(false)
   }
 
   const handleSubmit = (e) => {
@@ -49,9 +51,30 @@ export default function EditEntry({ isOpen, onClose, entry, onUpdate }) {
     onUpdate(returnData)
   }
 
+  // Handle dialog closure with delay to avoid conflict
+  const handleDialogClose = () => {
+    // Delay closure to prevent focus management conflicts
+    setTimeout(() => {
+      onClose()
+    }, 0)
+  }
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose} className="">
-      <DialogContent className="sm:max-w-[425px] overflow-y-scroll max-h-[90vh]">
+    <Dialog open={isOpen} onOpenChange={handleDialogClose}>
+      <DialogContent 
+        className="sm:max-w-[425px] overflow-y-scroll max-h-[90vh]"
+        onInteractOutside={(e) => {
+          // Prevent interaction outside dialog when dropdown was the source
+          if (e.target.closest('[role="menu"]')) {
+            e.preventDefault()
+          }
+        }}
+        onEscapeKeyDown={(e) => {
+          // Prevent immediate closure on Escape to manage focus properly
+          e.preventDefault()
+          handleDialogClose()
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Edit Entry</DialogTitle>
         </DialogHeader>
@@ -67,8 +90,8 @@ export default function EditEntry({ isOpen, onClose, entry, onUpdate }) {
                 name="date" 
                 date={formData.date} 
                 setDate={handleDateChange} 
-                open={dateModalOpen} 
-                onOpenChange={setDateModalOpen} />
+                open={dateEditModalOpen} 
+                onOpenChange={setDateEditModalOpen} />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="time" className="text-right">
@@ -81,6 +104,7 @@ export default function EditEntry({ isOpen, onClose, entry, onUpdate }) {
                 value={formData.time}
                 onChange={handleChange}
                 className="col-span-3"
+                ref={initialFocusRef}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -179,7 +203,7 @@ export default function EditEntry({ isOpen, onClose, entry, onUpdate }) {
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={handleDialogClose}>
               Cancel
             </Button>
             <Button type="submit">Save Changes</Button>
