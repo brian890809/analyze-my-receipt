@@ -38,7 +38,16 @@ const handler = async (req, res) => {
     }
     const data = unmarshall(JSON.parse(req.body))
     const { uuid, ...updates } = data
-    delete updates["merchant#time"];
+    
+    // Check if merchant or time was included in the updates
+    const hasTimeOrMerchantChange = updates.merchant || updates.time;
+    
+    // If merchant#time is in updates but neither merchant nor time are being updated,
+    // we don't need to keep merchant#time in updates
+    if (!hasTimeOrMerchantChange) {
+        delete updates["merchant#time"];
+    }
+    
     const marshalled = marshall(updates)
     const existingItem = unmarshall(await getItemByUUID(uuid));
     if (!existingItem) {
@@ -63,7 +72,7 @@ const handler = async (req, res) => {
 
     if (updateExpressions.length === 0) {
         console.log("No updates to apply.");
-        return;
+        return res.status(200).json({ message: "No updates to apply" });
     }
     const params = {
         TableName: 'receipt-entries', // TODO: replace with a new table
